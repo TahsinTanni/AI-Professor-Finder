@@ -1,0 +1,628 @@
+{
+  "name": "MSC paper",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -16
+      ],
+      "id": "7f8de11b-7caf-4623-bdf3-0e2ec5da7a71",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1DL28fvVt3hBQ4wJX-lHQ0S4WMLIyZ01LwZo2z6tHFJg/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Input",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DL28fvVt3hBQ4wJX-lHQ0S4WMLIyZ01LwZo2z6tHFJg/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        -16
+      ],
+      "id": "582a1c2e-f1c6-4da2-8a19-826bc5348f60",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SRBIs10J6L1xEdqP",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        448,
+        -16
+      ],
+      "id": "9df916bd-1b7a-4021-b228-3cc4c088e887",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "=https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google_scholar"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.Name }}"
+            },
+            {
+              "name": "as_ylo",
+              "value": "2022"
+            },
+            {
+              "name": "as_yhi",
+              "value": "2026"
+            },
+            {
+              "name": "num",
+              "value": "5"
+            },
+            {
+              "name": "api_key",
+              "value": "f04f1adb09baa5ec23562e639f96f959e10dcc4c1b1e7a5fdd8c8fde03cc4c81"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        -64
+      ],
+      "id": "70b22563-4f7f-47e2-895c-9f10b8c60c49",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const papers = $input.item.json.organic_results || [];\n\nlet paperText = \"\";\npapers.slice(0, 5).forEach((p, i) => {\n  paperText += `Paper ${i + 1}:\\n`;\n  paperText += `Title: ${p.title || \"N/A\"}\\n`;\n  paperText += `Snippet: ${p.snippet || \"N/A\"}\\n`;\n  paperText += `Link: ${p.link || \"N/A\"}\\n\\n`;\n});\n\nconst professor = $('Loop Over Items').item.json;\n\nconst prompt = \"You are helping me identify suitable professors for MS research and potential funding opportunities.\\n\\nMy undergraduate thesis title: \\\"Anchor-Guided Repair: A Defense Mechanism for Enhancing Stability of Compromised Pretrained Language Models Against Low-Precision and Weight Noise Attacks\\\"\\n\\nMy thesis abstract:\\nLarge Language Models (LLMs) are increasingly released as open-source and are susceptible to post-release attacks, including weight noise injection and low-precision quantization. Such attacks often have a significant negative effect on model stability and performance, augmenting perplexity and creating unreliable behavior. In practice, users might not have access to original clean weights and may unknowingly download compromised models. This thesis presents a defense mechanism called Anchor-Guided Repair, which aims to improve the stability of weakened LLMs against weight noise and low-precision attacks. The proposed method optimizes a fine-tuned attacked model on clean textual data while mitigating parameter changes via an anchor loss, which penalizes the difference from a clean, task-adapted baseline. This approach reduces instability by optimizing a composite task involving language modeling loss and anchor regularization, without distorting the knowledge acquired by the original model. The experimental results clearly show that Anchor-Guided Repair outperforms the attacked models consistently. Altogether, Anchor-Guided Repair is a viable post-deployment defense for weight-level attacks, promoting safer and more trustworthy model reuse in open-source settings.\\n\\nKeywords: Quantization attacks; Large Language Models security; weight noise injection; adversarial robustness; model compression; backdoor detection.\\n\\nNow analyze this professor:\\nName: \" + professor.Name + \"\\nUniversity: \" + professor.University + \"\\nCountry: \" + professor.Country + \"\\n\\nTheir recent papers (2022-2026):\\n\" + (paperText || \"No recent papers found.\") + \"\\nGive your response in this EXACT format with these exact labels:\\nRELEVANCE_SCORE: [number 0-10]\\nMOST_RELATABLE_PAPER: [paper title]\\nRESEARCH_OVERLAP: [2-3 sentences on shared themes like LLM security, adversarial robustness, quantization, model compression, trustworthy AI, post-deployment defense]\\nSHOULD_EMAIL: [Strongly recommended / Recommended / Maybe / Probably not — with one sentence explanation]\\nFUNDING_POTENTIAL: [High / Medium / Low — with brief explanation]\\nEMAIL_TALKING_POINTS: [3-5 specific points from their research connecting to my thesis]\\nIMPORTANT_DIFFERENCES: [1-2 sentences on how their research differs from mine]\";\n\nreturn {\n  professorName: professor.Name,\n  university: professor.University,\n  country: professor.Country,\n  paperText: paperText || \"No recent papers found.\",\n  topPaperTitle: papers[0]?.title || \"N/A\",\n  topPaperLink: papers[0]?.link || \"N/A\",\n  prompt: prompt\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -64
+      ],
+      "id": "3960440f-e627-4bcb-9711-2fcee6652495",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1344,
+        -64
+      ],
+      "id": "7aa87e09-1a48-4355-8256-87a545fe90eb",
+      "name": "Wait",
+      "webhookId": "565620ff-ed79-4ff8-83bb-06a62756d67f"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyANoyySaiC9aQi9bKHcHpLe8oXF_RLcJ2I",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ '{\"contents\":[{\"parts\":[{\"text\":' + JSON.stringify($json.prompt) + '}]}]}' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1568,
+        -64
+      ],
+      "id": "5c69bb95-2514-408e-b170-d2669b489d67",
+      "name": "HTTP Request1",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const raw = $input.item.json.candidates?.[0]?.content?.parts?.[0]?.text || \"\";\n\nfunction extract(label) {\n  const match = raw.match(new RegExp(label + \":\\\\s*(.+)\"));\n  return match ? match[1].trim() : \"N/A\";\n}\n\nconst scoreRaw = extract(\"RELEVANCE_SCORE\");\nconst score = parseInt(scoreRaw) || 0;\n\nconst prev = $('Code in JavaScript').item.json;\n\nreturn {\n  score,\n  country: prev.country,\n  name: prev.professorName,\n  university: prev.university,\n  relatablePaper: extract(\"MOST_RELATABLE_PAPER\"),\n  paperLink: prev.topPaperLink,\n  shouldEmail: extract(\"SHOULD_EMAIL\"),\n  fundingPotential: extract(\"FUNDING_POTENTIAL\"),\n  emailTips: extract(\"EMAIL_TALKING_POINTS\"),\n  fullAnalysis: raw\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        -64
+      ],
+      "id": "46e59a48-6704-4738-a6ee-6fb19d51cd24",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "eb50264c-09ee-472b-945f-1cda2285646c",
+              "leftValue": "={{ $json.score }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2016,
+        -64
+      ],
+      "id": "b1f9dd1e-2199-410e-866a-f3ab83cec1fe",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1DL28fvVt3hBQ4wJX-lHQ0S4WMLIyZ01LwZo2z6tHFJg/edit?gid=1221682961#gid=1221682961",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1221682961,
+          "mode": "list",
+          "cachedResultName": "Output",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DL28fvVt3hBQ4wJX-lHQ0S4WMLIyZ01LwZo2z6tHFJg/edit#gid=1221682961"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "COUNTRY": "={{ $json.country }}",
+            "NAME": "={{ $json.name }}",
+            "UNIVERSITY": "={{ $json.university }}",
+            "RELATABLE PAPER": "={{ $json.relatablePaper }}",
+            "PAPER LINK": "={{ $json.paperLink }}",
+            "RELEVANCE": "={{ $json.score }}",
+            "CONTACT INFO": "={{ $json.shouldEmail }}",
+            "FUNDING POTENTIAL": "={{ $json.fundingPotential }}",
+            "EMAIL TIPS": "={{ $json.emailTips }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "COUNTRY",
+              "displayName": "COUNTRY",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "NAME",
+              "displayName": "NAME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "UNIVERSITY",
+              "displayName": "UNIVERSITY",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "RELATABLE PAPER",
+              "displayName": "RELATABLE PAPER",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "PAPER LINK",
+              "displayName": "PAPER LINK",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "RELEVANCE",
+              "displayName": "RELEVANCE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CONTACT INFO",
+              "displayName": "CONTACT INFO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "PROVINCE",
+              "displayName": "PROVINCE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "FUNDING POTENTIAL",
+              "displayName": "FUNDING POTENTIAL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "EMAIL TIPS",
+              "displayName": "EMAIL TIPS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2240,
+        16
+      ],
+      "id": "c3752550-463d-4370-8b53-decc911d879e",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SRBIs10J6L1xEdqP",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ba448a86-a103-4581-ba29-927db183fe2e",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "DONE",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        -64
+      ],
+      "id": "e8eee652-5433-4511-bfc3-3bf5ddad4f1d",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1DL28fvVt3hBQ4wJX-lHQ0S4WMLIyZ01LwZo2z6tHFJg/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Input",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DL28fvVt3hBQ4wJX-lHQ0S4WMLIyZ01LwZo2z6tHFJg/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "DONE",
+            "row_number": "={{ $('Loop Over Items').item.json['row_number'] }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "University",
+              "displayName": "University",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2464,
+        16
+      ],
+      "id": "37eaca27-464c-4a80-8527-449f3ec0cb27",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SRBIs10J6L1xEdqP",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fbd35f20-5ea0-4b80-bbde-ba3d7c1f9c9b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e5c1d4aef9ec54c684c4f90a50d20a934e24b7425534c34479b197802ba58f46"
+  },
+  "id": "D4PkNHGwx20uvXkc",
+  "tags": []
+}
