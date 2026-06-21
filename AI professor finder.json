@@ -38,7 +38,7 @@
       "name": "Get row(s) in sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "SRBIs10J6L1xEdqP",
+          "id": "",
           "name": "Google Sheets account"
         }
       }
@@ -53,7 +53,7 @@
         448,
         -16
       ],
-      "id": "9df916bd-1b7a-4021-b228-3cc4c088e887",
+      "id": "",
       "name": "Loop Over Items"
     },
     {
@@ -84,7 +84,7 @@
             },
             {
               "name": "api_key",
-              "value": "f04f1adb09baa5ec23562e639f96f959e10dcc4c1b1e7a5fdd8c8fde03cc4c81"
+              "value": ""
             }
           ]
         },
@@ -332,7 +332,7 @@
       "name": "Append row in sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "SRBIs10J6L1xEdqP",
+          "id": "",
           "name": "Google Sheets account"
         }
       }
@@ -463,7 +463,7 @@
       "name": "Update row in sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "SRBIs10J6L1xEdqP",
+          "id": "",
           "name": "Google Sheets account"
         }
       }
